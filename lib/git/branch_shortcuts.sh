@@ -20,21 +20,50 @@ function _scmb_git_branch_shortcuts {
     return 1
   fi
 
+  # @jsjason: DISABLE RUBY IMPLEMENTATION
   # Use ruby to inject numbers into ls output
-  ruby -e "$( cat <<EOF
-    output = %x($_git_cmd branch --color=always $@)
-    line_count = output.lines.to_a.size
-    output.lines.each_with_index do |line, i|
-      spaces = (line_count > 9 && i < 9 ? "  " : " ")
-      puts line.sub(/^([ *]{2})/, "\\\1\033[2;37m[\033[0m#{i+1}\033[2;37m]\033[0m" << spaces)
-    end
-EOF
-)"
+  # ruby -e "$( cat <<EOF
+  #   output = %x($_git_cmd branch --color=always $@)
+  #   line_count = output.lines.to_a.size
+  #   output.lines.each_with_index do |line, i|
+  #     spaces = (line_count > 9 && i < 9 ? "  " : " ")
+  #     puts line.sub(/^([ *]{2})/, "\\\1\033[2;37m[\033[0m#{i+1}\033[2;37m]\033[0m" << spaces)
+  #   end
+# EOF
+# )"
+
+  zsh_compat
+
+  # Clear numbered env variables.
+  local i
+  for (( i=1; i<=$gs_max_changes; i++ )); do unset $git_env_char$i; done
+
+  local curr_branch=`$_git_cmd branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+  local num_lines="$($_git_cmd branch "$@" | wc -l)"
 
   # Set numbered file shortcut in variable
   local e=1
   IFS=$'\n'
+  local c_dark="\033[2;37m"
+  local c_rst="\033[0m"
   for branch in $($_git_cmd branch "$@" | sed "s/^[* ]\{2\}//"); do
+    local curr
+    local col
+    if [ "$curr_branch" != "$branch" ]; then
+      curr=" "
+      col=$c_rst
+    else
+      curr="*"
+      col="\033[0;32m"
+    fi
+
+    if [ $num_lines -ge 10 ] && [ $e -le 9  ] ; then
+      local space="  "
+    else
+      local space=" "
+    fi
+
+    echo -e  ""$curr" $c_dark[$c_rst$e$c_dark]$c_rst$space$col"$branch"$c_rst"
     export $git_env_char$e="$branch"
     if [ "${scmbDebug:-}" = "true" ]; then echo "Set \$$git_env_char$e  => $file"; fi
     let e++
