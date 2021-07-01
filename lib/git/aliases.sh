@@ -57,7 +57,7 @@ let COMP_CWORD+=1
 
 local cur words cword prev
 _get_comp_words_by_ref -n =: cur words cword prev
-_git
+_git_$2
 }
 "
 }
