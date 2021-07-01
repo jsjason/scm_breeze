@@ -55,6 +55,10 @@ git_status_shortcuts() {
     for line in $git_status; do
       if [[ $shell == *bash ]]; then
         x=${line:0:1}; y=${line:1:1}; file=${line:3}
+        if [[ ${file:0:1} == \" ]]; then
+          file=${file%\"}
+          file=${file:1}
+        fi
       else
         x=$line[1]; y=$line[2]; file=$line[4,-1]
       fi
